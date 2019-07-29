@@ -1,0 +1,120 @@
+#this file was copied here before making modifications to test OSTI mirroring
+# on July 23, 2019
+#this is the adios2 yml file
+variables:
+    SCHEDULER_PARAMETERS: " --nodes=1 --partition=ecp-p9-4v100 "
+
+stages:
+    - build
+    - test
+    - submit
+
+build:
+    stage: build
+    script:
+        - echo "Running build"
+        - echo "this is a test"
+        - srun env | grep SLURM_JOB_NAME
+        - whoami
+        - echo "HOSTNAME=$HOSTNAME"
+        - ls
+#
+        - . clone_adios2.sh
+        - echo " at top level files are"
+        - ls -ltr
+#
+        - CI_PROJ_DIR=${PWD}
+        - . set_modules_p9.sh
+#        - module load mpi/openmpi3-ppc64le
+#        - module load gcc/8.3.0
+#        - module load openmpi/3.1.4-noScheduler
+#        - module load cmake/3.14.5
+#       - module load python/3.7.3
+
+#        - module load mpi/openmpi3-ppc64le
+#
+#
+#
+        - module list
+        - python --version
+        - pushd ${CI_PROJ_DIR}/ADIOS2
+        - mkdir adios2_build
+        - pushd adios2_build
+#
+        - echo "----------------------------------------------------------------------------------------"
+        - cmake -DADIOS2_USE_MPI=ON -DADIOS2_USE_Fortran=ON -DCMAKE_INSTALL_PREFIX=${PWD} -Ddashboard_do_submit=OFF --verbose ../
+        - echo "-----------------------------------------------------------------------------------------"
+        - echo "running make as it says on the adios2 web site"
+        - make -j8
+        - echo "-----------------------------------------------------------------------------------------"
+        - echo "current dir = $PWD"
+        - popd
+        - echo "current dir = $PWD"
+        - echo " ALL DONE !!!!"
+    artifacts:
+       paths:
+           - ADIOS2/
+           - ADIOS2/adios2_build
+
+#
+    only:
+       - web
+    variables:
+        SCHEDULER_PARAMETERS: " --nodes=1 --partition=ecp-p9-4v100 "
+    tags: ['nmc', 'slurm', 'xx-testing', 'dosequis']
+#    tags: [mirage]
+#    tags: ['nmcc','mirage','p9']
+
+test:
+    stage: test
+    dependencies:
+      - build
+    script:
+        - echo "Running test"
+        - ls -ltr
+#
+        - CI_PROJ_DIR=${PWD}
+        - . set_modules_p9.sh
+#        - module load mpi/openmpi3-ppc64le
+#       - module load gcc/8.3.0
+#       - module load openmpi/3.1.4-noScheduler
+#       - module load cmake/3.14.5
+#        - module load python/3.7.3
+        - module list
+        - python --version
+#
+        - echo "CI_PROJ_DIR="${CI_PROJ_DIR}
+        - echo "currently in dir=$PWD"
+#        - module load mpi/openmpi3-ppc64le
+        - pushd ${CI_PROJ_DIR}/ADIOS2
+        - echo "current dir = $PWD"
+        - pushd adios2_build
+        - echo "current dir = $PWD"
+        - ctest -Ddashboard_do_submit=OFF
+        - popd
+        - echo "current dir = $PWD"
+        - popd
+        - echo "current dir = $PWD"
+    only:
+        - web
+    variables:
+        SCHEDULER_PARAMETERS: " --nodes=1 --partition=ecp-p9-4v100"
+    tags: ['nmc', 'slurm', 'xx-testing', 'dosequis']
+#    tags: [mirage]
+#    tags: ['nmcc','mirage','p9']
+submit:
+    stage: submit
+
+    script:
+#        - module load mpi/openmpi3-ppc64le
+        - echo "currently in dir=$PWD"
+        - echo "submitting"
+        - echo $HOSTNAME
+        - whoami
+    only:
+        - web
+    variables:
+        SCHEDULER_PARAMETERS: " --nodes=1 --partition=ecp-p9-4v100 "
+    tags: ['nmc', 'slurm','xx-testing', 'dosequis']
+#    tags: [mirage]
+#    tags: ['nmcc','mirage','p9']
